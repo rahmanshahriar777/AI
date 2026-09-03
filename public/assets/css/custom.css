@@ -1,0 +1,34 @@
+/* Swiper Gallery */
+#swiper-gallery .swiper-slide {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    /* ensures entire image fits */
+}
+
+#swiper-gallery .gallery-top {
+    width: 100%;
+    /* height: 500px; */
+    /* You can adjust height as needed */
+    margin-bottom: 10px;
+}
+
+#swiper-gallery .gallery-thumbs {
+    height: 100px;
+    box-sizing: border-box;
+    padding: 10px 0;
+}
+
+#swiper-gallery .gallery-thumbs .swiper-slide {
+    height: 100%;
+    opacity: 0.4;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+
+#swiper-gallery .gallery-thumbs .swiper-slide-thumb-active {
+    opacity: 1;
+}
+/* Swiper Gallery */
