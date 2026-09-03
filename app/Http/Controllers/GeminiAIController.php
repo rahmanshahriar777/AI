@@ -38,12 +38,18 @@ class GeminiAIController extends Controller
      */
     public function testConnection(Request $request)
     {
-        $apiKey = $request->input('api_key');
-        $model = $request->input('model', config('gemini.model', 'gemini-1.5-flash'));
+        try {
+            $apiKey = $request->input('api_key');
+            $model = $request->input('model', config('gemini.model', 'gemini-3.6-flash'));
 
-        $result = $this->gemini->testConnection($apiKey, $model);
-
-        return response()->json($result);
+            $result = $this->gemini->testConnection($apiKey, $model);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Connection test error: ' . $e->getMessage(),
+            ], 200);
+        }
     }
 
     /**
@@ -51,15 +57,15 @@ class GeminiAIController extends Controller
      */
     public function saveSettings(Request $request)
     {
-        $request->validate([
-            'api_key' => 'nullable|string',
-            'model' => 'required|string',
-        ]);
-
-        $apiKey = trim($request->input('api_key', ''));
-        $model = trim($request->input('model', 'gemini-1.5-flash'));
-
         try {
+            $request->validate([
+                'api_key' => 'nullable|string',
+                'model' => 'required|string',
+            ]);
+
+            $apiKey = trim($request->input('api_key', ''));
+            $model = trim($request->input('model', 'gemini-3.6-flash'));
+
             $envPath = base_path('.env');
             if (File::exists($envPath)) {
                 $envContent = File::get($envPath);
@@ -91,7 +97,7 @@ class GeminiAIController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save settings: ' . $e->getMessage(),
-            ], 500);
+            ], 200);
         }
     }
 
@@ -100,46 +106,53 @@ class GeminiAIController extends Controller
      */
     public function analyzeLead(Request $request)
     {
-        $leadId = $request->input('lead_id');
-        $enquiryId = $request->input('enquiry_id');
+        try {
+            $leadId = $request->input('lead_id');
+            $enquiryId = $request->input('enquiry_id');
 
-        $data = [
-            'customer_name' => $request->input('customer_name', 'Valued Client'),
-            'email' => $request->input('email', ''),
-            'phone' => $request->input('phone', ''),
-            'company' => $request->input('company', ''),
-            'job_type' => $request->input('job_type', 'General Inquiry'),
-            'description' => $request->input('description', ''),
-            'notes' => $request->input('notes', ''),
-        ];
+            $data = [
+                'customer_name' => $request->input('customer_name', 'Valued Client'),
+                'email' => $request->input('email', ''),
+                'phone' => $request->input('phone', ''),
+                'company' => $request->input('company', ''),
+                'job_type' => $request->input('job_type', 'General Inquiry'),
+                'description' => $request->input('description', ''),
+                'notes' => $request->input('notes', ''),
+            ];
 
-        // If leadId is passed, retrieve lead data
-        if ($leadId && empty($data['description'])) {
-            $lead = Lead::with('customer', 'jobType')->find($leadId);
-            if ($lead) {
-                $data['customer_name'] = $lead->customer->name ?? $data['customer_name'];
-                $data['company'] = $lead->customer->company ?? $data['company'];
-                $data['email'] = $lead->customer->email ?? $data['email'];
-                $data['phone'] = $lead->customer->phone ?? $data['phone'];
-                $data['job_type'] = $lead->jobType->name ?? $data['job_type'];
-                $data['description'] = $lead->description ?? $data['description'];
+            // If leadId is passed, retrieve lead data
+            if ($leadId && empty($data['description'])) {
+                $lead = Lead::with('customer', 'jobType')->find($leadId);
+                if ($lead) {
+                    $data['customer_name'] = $lead->customer->name ?? $data['customer_name'];
+                    $data['company'] = $lead->customer->company ?? $data['company'];
+                    $data['email'] = $lead->customer->email ?? $data['email'];
+                    $data['phone'] = $lead->customer->phone ?? $data['phone'];
+                    $data['job_type'] = $lead->jobType->name ?? $data['job_type'];
+                    $data['description'] = $lead->description ?? $data['description'];
+                }
             }
-        }
 
-        // If enquiryId is passed, retrieve enquiry data
-        if ($enquiryId && empty($data['description'])) {
-            $enquiry = Enquiry::with('customer', 'jobType')->find($enquiryId);
-            if ($enquiry) {
-                $data['customer_name'] = $enquiry->name ?? ($enquiry->customer->name ?? $data['customer_name']);
-                $data['email'] = $enquiry->email ?? $data['email'];
-                $data['phone'] = $enquiry->phone ?? $data['phone'];
-                $data['job_type'] = $enquiry->jobType->name ?? $data['job_type'];
-                $data['description'] = $enquiry->description ?? $data['description'];
+            // If enquiryId is passed, retrieve enquiry data
+            if ($enquiryId && empty($data['description'])) {
+                $enquiry = Enquiry::with('customer', 'jobType')->find($enquiryId);
+                if ($enquiry) {
+                    $data['customer_name'] = $enquiry->name ?? ($enquiry->customer->name ?? $data['customer_name']);
+                    $data['email'] = $enquiry->email ?? $data['email'];
+                    $data['phone'] = $enquiry->phone ?? $data['phone'];
+                    $data['job_type'] = $enquiry->jobType->name ?? $data['job_type'];
+                    $data['description'] = $enquiry->description ?? $data['description'];
+                }
             }
-        }
 
-        $result = $this->gemini->analyzeLeadOrEnquiry($data);
-        return response()->json($result);
+            $result = $this->gemini->analyzeLeadOrEnquiry($data);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Lead analysis failed: ' . $e->getMessage(),
+            ], 200);
+        }
     }
 
     /**
@@ -147,19 +160,26 @@ class GeminiAIController extends Controller
      */
     public function draftEmail(Request $request)
     {
-        $context = [
-            'recipient_name' => $request->input('recipient_name', 'Customer'),
-            'recipient_email' => $request->input('recipient_email', ''),
-            'subject_context' => $request->input('subject_context', 'Service Inquiry'),
-            'intent' => $request->input('intent', 'Initial quotation and response'),
-            'business_name' => config('app.name', 'NeoERP'),
-            'sender_name' => auth()->user()->name ?? 'Customer Service',
-            'enquiry_details' => $request->input('enquiry_details', ''),
-            'tone' => $request->input('tone', 'Professional, prompt, and friendly'),
-        ];
+        try {
+            $context = [
+                'recipient_name' => $request->input('recipient_name', 'Customer'),
+                'recipient_email' => $request->input('recipient_email', ''),
+                'subject_context' => $request->input('subject_context', 'Service Inquiry'),
+                'intent' => $request->input('intent', 'Initial quotation and response'),
+                'business_name' => config('app.name', 'NeoERP'),
+                'sender_name' => auth()->user()->name ?? 'Customer Service',
+                'enquiry_details' => $request->input('enquiry_details', ''),
+                'tone' => $request->input('tone', 'Professional, prompt, and friendly'),
+            ];
 
-        $result = $this->gemini->draftEmailReply($context);
-        return response()->json($result);
+            $result = $this->gemini->draftEmailReply($context);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Email drafting failed: ' . $e->getMessage(),
+            ], 200);
+        }
     }
 
     /**
@@ -167,16 +187,23 @@ class GeminiAIController extends Controller
      */
     public function generateQuotationScope(Request $request)
     {
-        $details = [
-            'customer' => $request->input('customer', 'Client'),
-            'title' => $request->input('title', 'Service Proposal'),
-            'job_type' => $request->input('job_type', 'General Work'),
-            'description' => $request->input('description', ''),
-            'special_requirements' => $request->input('special_requirements', ''),
-        ];
+        try {
+            $details = [
+                'customer' => $request->input('customer', 'Client'),
+                'title' => $request->input('title', 'Service Proposal'),
+                'job_type' => $request->input('job_type', 'General Work'),
+                'description' => $request->input('description', ''),
+                'special_requirements' => $request->input('special_requirements', ''),
+            ];
 
-        $result = $this->gemini->generateQuotationScope($details);
-        return response()->json($result);
+            $result = $this->gemini->generateQuotationScope($details);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Quotation scope generation failed: ' . $e->getMessage(),
+            ], 200);
+        }
     }
 
     /**
@@ -184,11 +211,18 @@ class GeminiAIController extends Controller
      */
     public function generateSafetyChecklist(Request $request)
     {
-        $jobType = $request->input('job_type', 'General Trade / Installation');
-        $jobDescription = $request->input('job_description', 'On-site technical and installation work.');
+        try {
+            $jobType = $request->input('job_type', 'General Trade / Installation');
+            $jobDescription = $request->input('job_description', 'On-site technical and installation work.');
 
-        $result = $this->gemini->generateSafetyChecklist($jobType, $jobDescription);
-        return response()->json($result);
+            $result = $this->gemini->generateSafetyChecklist($jobType, $jobDescription);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Safety checklist generation failed: ' . $e->getMessage(),
+            ], 200);
+        }
     }
 
     /**
@@ -196,15 +230,22 @@ class GeminiAIController extends Controller
      */
     public function chat(Request $request)
     {
-        $request->validate([
-            'message' => 'required|string',
-            'history' => 'nullable|array',
-        ]);
+        try {
+            $request->validate([
+                'message' => 'required|string',
+                'history' => 'nullable|array',
+            ]);
 
-        $message = $request->input('message');
-        $history = $request->input('history', []);
+            $message = $request->input('message');
+            $history = $request->input('history', []);
 
-        $result = $this->gemini->chatWithERP($message, $history);
-        return response()->json($result);
+            $result = $this->gemini->chatWithERP($message, $history);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Chat request failed: ' . $e->getMessage(),
+            ], 200);
+        }
     }
 }

@@ -387,36 +387,58 @@
 @section('scripts')
 @parent
 <script>
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    async function safeFetchJson(url, options = {}) {
+        const defaultHeaders = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+
+        const res = await fetch(url, {
+            ...options,
+            headers: {
+                ...defaultHeaders,
+                ...(options.headers || {})
+            }
+        });
+
+        const isJson = res.headers.get('content-type')?.includes('application/json');
+        const data = isJson ? await res.json() : null;
+
+        if (!res.ok) {
+            const errorMsg = (data && (data.message || data.error)) || (res.status === 401 ? 'Your session has expired. Please refresh and log in.' : (res.status === 419 ? 'CSRF token expired. Please refresh the page.' : `Server Error (${res.status})`));
+            throw new Error(errorMsg);
+        }
+
+        return data || { success: false, message: 'Invalid response from server' };
+    }
 
     function testGeminiConnection() {
         const statusAlert = document.getElementById('connectionStatusAlert');
         statusAlert.className = 'alert alert-info py-2 px-3 mb-0 small d-flex align-items-center gap-2';
         statusAlert.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Testing connection to Google Gemini API...';
 
-        fetch("{{ route('gemini.test') }}", {
+        safeFetchJson("{{ route('gemini.test') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
             body: JSON.stringify({})
         })
-        .then(res => res.json())
         .then(data => {
             if (data.success) {
                 statusAlert.className = 'alert alert-success py-2 px-3 mb-0 small d-flex align-items-center gap-2';
-                statusAlert.innerHTML = `<i class="ti tabler-check"></i> <strong>Online:</strong> ${data.message} <br><em>"${data.sample_response}"</em>`;
+                statusAlert.innerHTML = `<i class="ti tabler-check"></i> <strong>Online:</strong> ${data.message} <br><em>"${data.sample_response || ''}"</em>`;
                 if (typeof toastr !== 'undefined') toastr.success('Gemini API is connected successfully!');
             } else {
                 statusAlert.className = 'alert alert-danger py-2 px-3 mb-0 small d-flex align-items-center gap-2';
-                statusAlert.innerHTML = `<i class="ti tabler-alert-triangle"></i> <strong>Error:</strong> ${data.message}`;
-                if (typeof toastr !== 'undefined') toastr.error(data.message);
+                statusAlert.innerHTML = `<i class="ti tabler-alert-triangle"></i> <strong>Error:</strong> ${data.message || data.error}`;
+                if (typeof toastr !== 'undefined') toastr.error(data.message || data.error);
             }
         })
         .catch(err => {
             statusAlert.className = 'alert alert-danger py-2 px-3 mb-0 small';
-            statusAlert.innerHTML = `<i class="ti tabler-alert-triangle"></i> Network error: ${err.message}`;
+            statusAlert.innerHTML = `<i class="ti tabler-alert-triangle"></i> Connection error: ${err.message}`;
         });
     }
 
@@ -428,15 +450,10 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
 
-        fetch("{{ route('gemini.save-settings') }}", {
+        safeFetchJson("{{ route('gemini.save-settings') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
             body: JSON.stringify({ api_key: apiKey, model: model })
         })
-        .then(res => res.json())
         .then(data => {
             btn.disabled = false;
             btn.innerHTML = 'Save Settings';
@@ -446,7 +463,7 @@
                 if (modal) modal.hide();
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                if (typeof toastr !== 'undefined') toastr.error(data.message);
+                if (typeof toastr !== 'undefined') toastr.error(data.message || data.error);
             }
         })
         .catch(err => {
@@ -474,15 +491,10 @@
             description: document.getElementById('la_desc').value,
         };
 
-        fetch("{{ route('gemini.analyze-lead') }}", {
+        safeFetchJson("{{ route('gemini.analyze-lead') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
         .then(res => {
             btn.disabled = false;
             btn.innerHTML = '<i class="ti tabler-sparkles me-1"></i> Analyze Lead with Gemini AI';
@@ -557,15 +569,10 @@
             enquiry_details: document.getElementById('ed_details').value
         };
 
-        fetch("{{ route('gemini.draft-email') }}", {
+        safeFetchJson("{{ route('gemini.draft-email') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
         .then(res => {
             btn.disabled = false;
             btn.innerHTML = '<i class="ti tabler-sparkles me-1"></i> Draft Email with Gemini AI';
@@ -618,15 +625,10 @@
             description: document.getElementById('sc_desc').value
         };
 
-        fetch("{{ route('gemini.generate-scope') }}", {
+        safeFetchJson("{{ route('gemini.generate-scope') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
         .then(res => {
             btn.disabled = false;
             btn.innerHTML = '<i class="ti tabler-sparkles me-1"></i> Generate Scope of Work';
@@ -706,15 +708,10 @@
             job_description: document.getElementById('sf_desc').value
         };
 
-        fetch("{{ route('gemini.generate-safety') }}", {
+        safeFetchJson("{{ route('gemini.generate-safety') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
         .then(res => {
             btn.disabled = false;
             btn.innerHTML = '<i class="ti tabler-shield-check me-1"></i> Generate RAMS Safety Checklist';
@@ -781,15 +778,10 @@
         placeholder.classList.remove('d-none');
         resultContainer.classList.add('d-none');
 
-        fetch("{{ route('gemini.chat') }}", {
+        safeFetchJson("{{ route('gemini.chat') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
             body: JSON.stringify({ message: prompt })
         })
-        .then(res => res.json())
         .then(res => {
             btn.disabled = false;
             btn.innerHTML = '<i class="ti tabler-send me-1"></i> Execute Prompt';

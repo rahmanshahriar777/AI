@@ -116,14 +116,24 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': metaToken
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': metaToken,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
                 message: message,
                 history: geminiChatHistory
             })
         })
-        .then(res => res.json())
+        .then(async res => {
+            const isJson = res.headers.get('content-type')?.includes('application/json');
+            const data = isJson ? await res.json() : null;
+            if (!res.ok) {
+                const errorMsg = (data && (data.message || data.error)) || (res.status === 401 ? 'Session expired. Please refresh and log in.' : (res.status === 419 ? 'CSRF token expired. Please refresh the page.' : `Server Error (${res.status})`));
+                throw new Error(errorMsg);
+            }
+            return data || { success: false, error: 'Invalid response from server.' };
+        })
         .then(res => {
             sendBtn.disabled = false;
             const loader = document.getElementById(loadingId);
@@ -151,7 +161,7 @@
                             <span class="avatar-initial rounded-circle bg-danger text-white"><i class="ti tabler-alert-triangle"></i></span>
                         </div>
                         <div class="p-3 rounded-3 bg-white border border-danger text-danger shadow-sm small">
-                            ${res.error || 'Unable to generate reply.'}
+                            ${res.error || res.message || 'Unable to generate reply.'}
                         </div>
                     </div>
                 `;

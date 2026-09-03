@@ -96,17 +96,27 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrf
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify(currentWorkflowContext)
         })
-        .then(res => res.json())
+        .then(async res => {
+            const isJson = res.headers.get('content-type')?.includes('application/json');
+            const data = isJson ? await res.json() : null;
+            if (!res.ok) {
+                const errorMsg = (data && (data.message || data.error)) || (res.status === 401 ? 'Session expired. Please refresh and log in.' : (res.status === 419 ? 'CSRF token expired. Please refresh the page.' : `Server Error (${res.status})`));
+                throw new Error(errorMsg);
+            }
+            return data || { success: false, error: 'Invalid response from server.' };
+        })
         .then(res => {
             loading.classList.add('d-none');
             content.classList.remove('d-none');
 
             if (!res.success) {
-                content.innerHTML = `<div class="alert alert-danger">${res.error || 'Failed to analyze.'}</div>`;
+                content.innerHTML = `<div class="alert alert-danger">${res.error || res.message || 'Failed to analyze.'}</div>`;
                 return;
             }
 
@@ -171,7 +181,9 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrf
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
                 recipient_name: currentWorkflowContext.recipient_name || 'Customer',
@@ -180,13 +192,21 @@
                 enquiry_details: currentWorkflowContext.enquiry_details || ''
             })
         })
-        .then(res => res.json())
+        .then(async res => {
+            const isJson = res.headers.get('content-type')?.includes('application/json');
+            const data = isJson ? await res.json() : null;
+            if (!res.ok) {
+                const errorMsg = (data && (data.message || data.error)) || (res.status === 401 ? 'Session expired. Please refresh and log in.' : (res.status === 419 ? 'CSRF token expired. Please refresh the page.' : `Server Error (${res.status})`));
+                throw new Error(errorMsg);
+            }
+            return data || { success: false, error: 'Invalid response from server.' };
+        })
         .then(res => {
             loading.classList.add('d-none');
             content.classList.remove('d-none');
 
             if (!res.success) {
-                document.getElementById('geminiWorkflowBody').innerHTML = `<div class="alert alert-danger">${res.error || 'Failed to draft email.'}</div>`;
+                document.getElementById('geminiWorkflowBody').innerHTML = `<div class="alert alert-danger">${res.error || res.message || 'Failed to draft email.'}</div>`;
                 return;
             }
 
