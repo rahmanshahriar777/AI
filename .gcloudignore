@@ -1,0 +1,17 @@
+.gcloudignore
+.git
+.gitignore
+.editorconfig
+.env
+.env.backup
+.env.production
+env.yaml
+node_modules/
+vendor/
+tests/
+storage/*.key
+storage/logs/*.log
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/cache/*
+.phpunit.result.cache
