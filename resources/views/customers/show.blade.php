@@ -612,11 +612,18 @@
                             <div class="card">
                                 <div class="d-flex flex-md-row flex-column">
                                     <div>
-                                        <iframe width="100%" height="300" frameborder="0" style="border:0"
-                                            referrerpolicy="no-referrer-when-downgrade"
-                                            src="https://www.google.com/maps/embed/v1/place?key={{ config('services.google.maps_api_key') }}&q={{ $customer->billingaddress->address ?? '' }}, {{ $customer->billingaddress->county ?? '' }}, {{ $customer->billingaddress->postcode ?? '' }}+{{ $customer->billingaddress->address ?? '' }}, {{ $customer->billingaddress->county ?? '' }}, {{ $customer->billingaddress->country ?? '' }}"
-                                            allowfullscreen>
-                                        </iframe>
+                                        @if(config('services.google.maps_api_key'))
+                                            <iframe width="100%" height="300" frameborder="0" style="border:0"
+                                                referrerpolicy="no-referrer-when-downgrade"
+                                                src="https://www.google.com/maps/embed/v1/place?key={{ config('services.google.maps_api_key') }}&q={{ urlencode(($customer->billingaddress->address ?? '') . ', ' . ($customer->billingaddress->county ?? '') . ', ' . ($customer->billingaddress->postcode ?? '') . ', ' . ($customer->billingaddress->country ?? '')) }}"
+                                                allowfullscreen>
+                                            </iframe>
+                                        @else
+                                            <div class="text-center p-4 bg-light text-muted" style="width: 300px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                                <i class="icon-base ti tabler-map-pin fs-2 mb-2"></i>
+                                                <p class="mb-0 small">Maps preview requires <code>GOOGLE_MAPS_API_KEY</code>.</p>
+                                            </div>
+                                        @endif
                                     </div>
                                     <div>
                                         <div class="card-body">
@@ -662,11 +669,18 @@
                                 <div class="card">
                                     <div class="d-flex flex-md-row flex-column">
                                         <div>
-                                            <iframe width="100%" height="300" frameborder="0" style="border:0"
-                                                referrerpolicy="no-referrer-when-downgrade"
-                                                src="https://www.google.com/maps/embed/v1/place?key={{ config('services.google.maps_api_key') }}&q={{ $csaddress->address }}, {{ $csaddress->county }}, {{ $csaddress->postcode }}+{{ $csaddress->address }}, {{ $csaddress->county }}, {{ $csaddress->country }}"
-                                                allowfullscreen>
-                                            </iframe>
+                                            @if(config('services.google.maps_api_key'))
+                                                <iframe width="100%" height="300" frameborder="0" style="border:0"
+                                                    referrerpolicy="no-referrer-when-downgrade"
+                                                    src="https://www.google.com/maps/embed/v1/place?key={{ config('services.google.maps_api_key') }}&q={{ urlencode(($csaddress->address ?? '') . ', ' . ($csaddress->county ?? '') . ', ' . ($csaddress->postcode ?? '') . ', ' . ($csaddress->country ?? '')) }}"
+                                                    allowfullscreen>
+                                                </iframe>
+                                            @else
+                                                <div class="text-center p-4 bg-light text-muted" style="width: 300px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                                    <i class="icon-base ti tabler-map-pin fs-2 mb-2"></i>
+                                                    <p class="mb-0 small">Maps preview requires <code>GOOGLE_MAPS_API_KEY</code>.</p>
+                                                </div>
+                                            @endif
                                         </div>
                                         <div>
                                             <div class="card-body">

@@ -808,11 +808,18 @@
                                     </div>
                                     <hr class="m-0">
                                     <div class="card-img-top">
-                                        <iframe width="100%" height="450" frameborder="0" style="border:0"
-                                            referrerpolicy="no-referrer-when-downgrade"
-                                            src="https://www.google.com/maps/embed/v1/place?key={{ config('services.google.maps_api_key') }}&q={{ $job->jobaddress->address }}, {{ $job->jobaddress->county }}, {{ $job->jobaddress->postcode }}+{{ $job->jobaddress->address }}, {{ $job->jobaddress->county }}, {{ $job->jobaddress->country }}"
-                                            allowfullscreen>
-                                        </iframe>
+                                        @if(config('services.google.maps_api_key'))
+                                            <iframe width="100%" height="450" frameborder="0" style="border:0"
+                                                referrerpolicy="no-referrer-when-downgrade"
+                                                src="https://www.google.com/maps/embed/v1/place?key={{ config('services.google.maps_api_key') }}&q={{ urlencode(($job->jobaddress->address ?? '') . ', ' . ($job->jobaddress->county ?? '') . ', ' . ($job->jobaddress->postcode ?? '') . ', ' . ($job->jobaddress->country ?? '')) }}"
+                                                allowfullscreen>
+                                            </iframe>
+                                        @else
+                                            <div class="text-center p-4 bg-light text-muted">
+                                                <i class="icon-base ti tabler-map-pin fs-2 mb-2 d-block"></i>
+                                                <p class="mb-0 small">Google Maps preview requires <code>GOOGLE_MAPS_API_KEY</code>.</p>
+                                            </div>
+                                        @endif
                                     </div>
                                     <div class="card-body">
                                         <ul class="timeline mb-0">

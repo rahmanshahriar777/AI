@@ -287,8 +287,15 @@
                         const addressParam = encodeURIComponent(
                             `${jobAddress.address}, ${jobAddress.county}, ${jobAddress.country}`
                             );
-                        modal.querySelector('#jobMap').src =
-                            `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_API_KEY}&q=${addressParam}`;
+                        const mapEl = modal.querySelector('#jobMap');
+                        if (mapEl) {
+                            if (GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.trim() !== '') {
+                                mapEl.style.display = 'block';
+                                mapEl.src = `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_API_KEY}&q=${addressParam}`;
+                            } else {
+                                mapEl.style.display = 'none';
+                            }
+                        }
                     });
             }, 100);
         });
