@@ -1,0 +1,45 @@
+steps:
+  # 1. Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/neoerp-app:latest'
+      - '.'
+
+  # 2. Push Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/neoerp-app:latest'
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'neoerp-app'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/neoerp-app:latest'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '300'
+      - '--set-env-vars'
+      - 'APP_NAME=NeoERP,APP_ENV=production,APP_DEBUG=false,APP_KEY=${_APP_KEY},LOG_CHANNEL=stderr,DB_CONNECTION=sqlite,DB_DATABASE=/var/www/html/database/database.sqlite,SESSION_DRIVER=file,CACHE_STORE=file,QUEUE_CONNECTION=sync,GEMINI_API_KEY=${_GEMINI_API_KEY},OPENAI_API_KEY=${_OPENAI_API_KEY},AI_PRIMARY_PROVIDER=gemini,AI_FALLBACK_PROVIDER=openai,AI_GEMINI_MODEL=gemini-flash-lite-latest,AI_FALLBACK_MODEL=gpt-4o-mini'
+
+substitutions:
+  _APP_KEY: 'base64:placeholder_key'
+  _GEMINI_API_KEY: 'placeholder_gemini_key'
+  _OPENAI_API_KEY: 'placeholder_openai_key'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/neoerp-app:latest'

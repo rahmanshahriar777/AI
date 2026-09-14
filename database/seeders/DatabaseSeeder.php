@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
             CreateAdminUserSeeder::class,
             CreateBusinessInfoSeeder::class,
             StockUnitSeeder::class,
+            AiTestDataSeeder::class,
+            CustomerDataSeeder::class,
+            StaffUserProfilesSeeder::class,
         ]);
     }
 }

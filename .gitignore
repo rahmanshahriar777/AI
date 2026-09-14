@@ -30,7 +30,3 @@ Homestead.json
 .phpactor.json
 auth.json
 .DS_Store
-database/*.sqlite
-database/*.sqlite-journal
-*.sqlite
-cacert.pem

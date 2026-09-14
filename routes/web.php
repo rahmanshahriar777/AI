@@ -33,7 +33,7 @@ use App\Http\Controllers\VehicleCheckingController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\VehicleOverviewController;
 use App\Http\Controllers\CertificateController;
-use App\Http\Controllers\GeminiAIController;
+use App\Http\Controllers\AiAssistantController;
 
 Route::get('/', function () {
     return Redirect::to('/login');
@@ -318,13 +318,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('certificates/{id}/update', [CertificateController::class, 'update'])->name('certificates.update');
     Route::delete('certificates/{id}', [CertificateController::class, 'destroy'])->name('certificates.destroy');
 
-    // Google Gemini AI Workflow & Assistant Routes
-    Route::get('/gemini', [GeminiAIController::class, 'index'])->name('gemini.index');
-    Route::post('/gemini/test-connection', [GeminiAIController::class, 'testConnection'])->name('gemini.test');
-    Route::post('/gemini/save-settings', [GeminiAIController::class, 'saveSettings'])->name('gemini.save-settings');
-    Route::post('/gemini/analyze-lead', [GeminiAIController::class, 'analyzeLead'])->name('gemini.analyze-lead');
-    Route::post('/gemini/draft-email', [GeminiAIController::class, 'draftEmail'])->name('gemini.draft-email');
-    Route::post('/gemini/generate-scope', [GeminiAIController::class, 'generateQuotationScope'])->name('gemini.generate-scope');
-    Route::post('/gemini/generate-safety', [GeminiAIController::class, 'generateSafetyChecklist'])->name('gemini.generate-safety');
-    Route::post('/gemini/chat', [GeminiAIController::class, 'chat'])->name('gemini.chat');
+    // AI Assistant & Operations Endpoints
+    Route::get('/ai/chat', [AiAssistantController::class, 'chatPage'])->name('ai.chat.page');
+    Route::post('/ai/chat', [AiAssistantController::class, 'chat'])->name('ai.chat.send');
+    Route::post('/ai/generate', [AiAssistantController::class, 'generate'])->name('ai.generate');
+    Route::post('/ai/summarize-lead/{id}', [AiAssistantController::class, 'summarizeLead'])->name('ai.summarize.lead');
+    Route::post('/ai/summarize-enquiry/{id}', [AiAssistantController::class, 'summarizeEnquiry'])->name('ai.summarize.enquiry');
+    Route::get('/ai/usage-stats', [AiAssistantController::class, 'usageStats'])->name('ai.usage.stats');
 });

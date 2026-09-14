@@ -61,16 +61,15 @@
                 <div class="card">
                     <div
                         class="card-header bg-label-primary d-flex justify-content-sm-between align-items-sm-center flex-column flex-sm-row">
-                        <div class="d-flex flex-column justify-content-center">
-                            <span class="h5 mb-0 d-flex align-items-center flex-wrap gap-2">
-                                ENQUIRY #<span class="badge bg-label-secondary me-1 ms-2">{{ $enquiry->enquiry_name }}</span>
-                                <button type="button" class="btn btn-sm btn-primary shadow-sm" onclick="triggerLeadAIAnalysis('{{ addslashes($enquiry->name ?? '') }}', '{{ addslashes($enquiry->jobType->name ?? '') }}', '{{ addslashes(strip_tags($enquiry->enquiry ?? '')) }}', null, {{ $enquiry->id }})">
-                                    <i class="ti tabler-sparkles me-1"></i> AI Analyze
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary shadow-sm" onclick="triggerEmailAIDraft('{{ addslashes($enquiry->name ?? '') }}', '{{ addslashes($enquiry->email ?? '') }}', '{{ addslashes(strip_tags($enquiry->enquiry ?? '')) }}')">
-                                    <i class="ti tabler-mail-spark me-1"></i> AI Reply
-                                </button>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="h5 mb-0">
+                                ENQUIRY #<span
+                                    class="badge bg-label-secondary me-1 ms-2">{{ $enquiry->enquiry_name }}</span>
                             </span>
+                            <button type="button" class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm ms-2" id="btnAiSummarizeEnquiry" title="Analyze with AI and draft response">
+                                <i class="ti tabler-sparkles fs-6"></i>
+                                <span>AI Summarize &amp; Reply</span>
+                            </button>
                         </div>
 
                         @hasrole(['lead-job-manager', 'enquiry-manager', 'office-manager'])
@@ -998,4 +997,98 @@
     </div>
     <!-- / Content -->
 
+    <!-- AI Enquiry Summarize Modal -->
+    <div class="modal fade" id="aiEnquiryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-label-primary py-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="ti tabler-sparkles fs-4 text-primary"></i>
+                        <h5 class="modal-title fw-bold mb-0">AI Enquiry Analysis &amp; Draft Reply</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="ai-enquiry-loading" class="text-center py-5">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <div class="fw-semibold">AI is analyzing client enquiry and drafting professional response...</div>
+                        <small class="text-muted">Powered by Gemini &amp; NeoERP live intelligence</small>
+                    </div>
+                    <div id="ai-enquiry-content" class="d-none">
+                        <div class="p-3 bg-light rounded-3 border mb-3" id="ai-enquiry-text" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem; line-height: 1.6;"></div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" id="ai-enquiry-meta"></small>
+                            <button type="button" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" id="copyEnquiryAiBtn">
+                                <i class="ti tabler-copy fs-6"></i> Copy Text
+                            </button>
+                        </div>
+                    </div>
+                    <div id="ai-enquiry-error" class="alert alert-danger d-none my-3"></div>
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('btnAiSummarizeEnquiry');
+        if (btn) {
+            btn.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('aiEnquiryModal'));
+                modal.show();
+
+                const loadingEl = document.getElementById('ai-enquiry-loading');
+                const contentEl = document.getElementById('ai-enquiry-content');
+                const textEl = document.getElementById('ai-enquiry-text');
+                const metaEl = document.getElementById('ai-enquiry-meta');
+                const errorEl = document.getElementById('ai-enquiry-error');
+
+                loadingEl.classList.remove('d-none');
+                contentEl.classList.add('d-none');
+                errorEl.classList.add('d-none');
+
+                fetch('{{ route("ai.summarize.enquiry", ["id" => $enquiry->id]) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    loadingEl.classList.add('d-none');
+                    if (data.success && data.text) {
+                        contentEl.classList.remove('d-none');
+                        textEl.textContent = data.text;
+                        metaEl.textContent = `Completed in ${Math.round(data.latencyMs)}ms`;
+                    } else {
+                        errorEl.classList.remove('d-none');
+                        errorEl.textContent = data.errorMessage || 'Failed to generate AI response.';
+                    }
+                })
+                .catch(err => {
+                    loadingEl.classList.add('d-none');
+                    errorEl.classList.remove('d-none');
+                    errorEl.textContent = 'Network or server error during AI generation.';
+                });
+            });
+        }
+
+        const copyBtn = document.getElementById('copyEnquiryAiBtn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function() {
+                const text = document.getElementById('ai-enquiry-text').textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    copyBtn.innerHTML = '<i class="ti tabler-check fs-6"></i> Copied!';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i class="ti tabler-copy fs-6"></i> Copy Text';
+                    }, 2000);
+                });
+            });
+        }
+    });
+    </script>
 @endsection

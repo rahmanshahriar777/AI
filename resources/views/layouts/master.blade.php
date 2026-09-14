@@ -94,16 +94,6 @@
 
                         <ul class="navbar-nav flex-row align-items-center ms-md-auto">
 
-                            <!-- Gemini AI Copilot -->
-                            <li class="nav-item me-2">
-                                <a class="nav-link btn btn-icon btn-text-primary rounded-pill bg-label-primary shadow-sm"
-                                    href="javascript:void(0);" onclick="openAIAssistant()" data-bs-toggle="tooltip"
-                                    data-bs-placement="bottom" title="NeoERP Gemini AI Copilot">
-                                    <i class="icon-base ti tabler-sparkles icon-22px text-primary"></i>
-                                </a>
-                            </li>
-                            <!-- / Gemini AI Copilot -->
-
                             <!-- Style Switcher -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle hide-arrow btn btn-icon btn-text-secondary rounded-pill"
@@ -233,6 +223,14 @@
                                         <div class="d-grid px-2 pt-2 pb-1">
                                             <a class="btn btn-sm btn-danger d-flex" href="{{ route('logout') }}"
                                                 onclick="event.preventDefault();
+                                                     try {
+                                                         Object.keys(sessionStorage).forEach(function(k) {
+                                                             if (k.startsWith('neoerp_')) sessionStorage.removeItem(k);
+                                                         });
+                                                         Object.keys(localStorage).forEach(function(k) {
+                                                             if (k.startsWith('neoerp_')) localStorage.removeItem(k);
+                                                         });
+                                                     } catch(e) {}
                                                      document.getElementById('logout-form').submit();">
                                                 <small class="align-middle">Logout</small>
                                                 <i class="icon-base ti tabler-logout ms-2 icon-14px"></i>
@@ -281,13 +279,13 @@
 
 
 
+        <!-- AI Assistant Modal Component -->
+        @include('partials.ai_assistant_modal')
+
         <!-- Drag Target Area To SlideIn Menu On Small Screens -->
         <div class="drag-target"></div>
     </div>
     <!-- / Layout wrapper -->
-
-    @include('partials.gemini_assistant_modal')
-    @include('partials.gemini_workflow_modals')
 
     @section('scripts')
         <!-- Core JS -->

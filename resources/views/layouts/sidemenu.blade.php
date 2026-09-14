@@ -20,6 +20,13 @@
                 <div data-i18n="Dashboard">Dashboard</div>
             </a>
         </li>
+        <li class="menu-item {{ request()->is('ai/chat') || request()->is('ai/*') ? 'active' : '' }}">
+            <a href="{{ url('ai/chat') }}" class="menu-link">
+                <i class="menu-icon icon-base ti tabler-robot text-primary"></i>
+                <div data-i18n="AI Chatbot">AI Chatbot</div>
+                <div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">AI</div>
+            </a>
+        </li>
         @hasanyrole('super_admin|admin')
             <!-- Apps & Pages -->
             <li
@@ -295,7 +302,7 @@
                 </a>
             </li>
         @endhasrole
-        @hasrole('job-manager')
+        @hasanyrole(['job-manager', 'scheduler', 'Scheduler', 'scheduler-manager'])
             <li
                 class="menu-item {{ request()->is('jobs') || request()->is('jobs/*') || request()->is('job/*') ? 'active' : '' }}">
                 <a href="{{ url('jobs') }}" class="menu-link">
@@ -338,7 +345,7 @@
                     </li>
                 </ul>
             </li>
-        @endhasrole
+        @endhasanyrole
         @hasrole('lead-job-manager')
             <li
                 class="menu-item {{ request()->is('leads') || request()->is('leads/*') || request()->is('lead/*') ? 'active' : '' }}">
@@ -601,21 +608,8 @@
                             <div data-i18n="Users">Business Info</div>
                         </a>
                     </li>
-                    <li class="menu-item {{ request()->is('gemini') || request()->is('gemini/*') ? 'active' : '' }}">
-                        <a href="{{ route('gemini.index') }}" class="menu-link">
-                            <div data-i18n="Gemini AI Hub">Gemini AI Hub</div>
-                        </a>
-                    </li>
+
                 </ul>
             </li>
         @endhasrole
-        
-        <!-- Gemini AI Assistant Quick Action -->
-        <li class="menu-item {{ request()->is('gemini') ? 'active' : '' }}">
-            <a href="{{ route('gemini.index') }}" class="menu-link text-primary fw-bold">
-                <i class="menu-icon icon-base ti tabler-sparkles text-primary"></i>
-                <div data-i18n="Gemini AI">Gemini AI Studio</div>
-                <div class="badge bg-label-primary rounded-pill ms-auto">Free</div>
-            </a>
-        </li>
 </aside>

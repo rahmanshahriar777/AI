@@ -52,6 +52,8 @@ class HomeController extends Controller
             return $this->leadJobManagerDashboard();
         } elseif (auth()->user()->hasRole('staff')) {
             return $this->staffDashboard();
+        } elseif (auth()->user()->hasAnyRole(['scheduler', 'Scheduler', 'scheduler-manager'])) {
+            return redirect()->route('scheduler.index');
         } else {
             abort(403, 'CAN NOT ACCESS TO ROLE');
         }

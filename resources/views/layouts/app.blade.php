@@ -99,6 +99,16 @@
 
     <!-- Page JS -->
     <script src="{{asset('assets/js/pages-auth.js')}}"></script>
+    <script>
+        try {
+            Object.keys(sessionStorage).forEach(function(k) {
+                if (k.startsWith('neoerp_')) sessionStorage.removeItem(k);
+            });
+            Object.keys(localStorage).forEach(function(k) {
+                if (k.startsWith('neoerp_')) localStorage.removeItem(k);
+            });
+        } catch(e) {}
+    </script>
 </body>
 
 </html>
